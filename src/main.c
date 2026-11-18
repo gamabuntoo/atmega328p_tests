@@ -1,0 +1,333 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: gule-bat <gule-bat@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/11/17 22:34:14 by gule-bat          #+#    #+#             */
+/*   Updated: 2026/11/18 03:55:30 by gule-bat         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "atmegatest.h"
+
+void	flip_bit(uint8_t bit,  volatile uint8_t *Por)
+{
+	uint8_t v = 1;
+	uint8_t b = 0;
+	b = v << bit;
+
+	if (b != 0 && ((b) & (b-1)) == 0)
+	{
+		if ((*Por & b) != 0)
+			*Por &= ~b;
+		else
+			*Por |= b;
+	}
+	return ;
+}
+
+void	flip_state_segment(uint8_t segment, bool stat)
+{
+	int i = 2;
+	char c = 'a';
+
+	if (segment > 'z' || segment < 'a')
+		return;
+	while (i < 9)
+	{
+		if (segment == c)
+		{			
+			if (segment == 'g' && i == 8)
+			{
+				if ((!(PORTB & (1 << PB0)) && (stat == 1)) || ((PORTB & (1 << PB0)) && stat == 0))
+					return;
+				return (flip_bit(0, &PORTB));
+			}
+			if (((!(PORTD & (1 << i)) && stat == 1) || ((PORTD & (1 << i)) && stat == 0)) && i < 8)
+				return;
+			return flip_bit(i, &PORTD);
+		}
+		c++;
+		i++;
+	}
+
+}
+
+void	flip_state_digit(uint8_t dig)
+{
+	uint8_t i = 0;
+	
+	if (dig >= 4 && dig < 0)
+		return ;
+	while (i < 4)
+	{
+		if (i == dig)
+			flip_bit(i+1, &PORTB);
+		i++;
+	}
+}
+
+void idle_2()
+{
+	static int i = 0;
+	static char c = 'a';
+	static bool stat = 1;
+	char t[4];
+	if (c >= 'g' || i >= 7)
+	{
+		i = 0;
+		c = 'a';
+		stat = !stat;
+	}
+	while (i < 7 && p_switch() == false)
+	{
+		if (!((PINC & (1 << PC1))) && ((i != 5 && i != 7 && i != 0) || (i > 0 && i < 4))) // if button2 pushed, b bits get flipped
+			flip_state_digit(i);
+		flip_state_segment(c, stat);
+
+		//debug
+
+		display_string_uart(itoa(i, t, 10));			display_string_uart(" index\r\n");
+		print_port_stat_uart(&PORTD, "PORTD");
+		print_port_stat_uart(&PORTB, "PORTB");
+	
+		for (int x = 0; x < 8 && p_switch() == false; x++)
+			_delay_ms(20);
+		i++;
+		c++;
+	}
+
+}
+
+
+
+int which_side(uint16_t val)
+{
+	uint16_t x = 0;
+	uint16_t res = 0;
+
+	// 1 pour A | 4 pour B
+	uint16_t tabA[] = digitA;
+	uint16_t tabB[] = digitB;
+	if (val > 10 && val < 0)
+		return 0;
+	while (x < digitAs)
+	{
+		if (val == tabA[x])
+		{
+			res = 1;
+			if (x > 1)
+			{
+				res += 1; // 2
+				return res;
+			}
+			return (res);
+		}
+		x++;
+	}
+	x = 0;
+	while (x < digitBs)
+	{
+		if (val == tabB[x])
+		{
+			res = 4;
+			return (res);
+		}
+		x++;
+	}
+	return (0);
+}
+
+void	display_number(uint8_t val)
+{
+	int i = 0;
+	uint16_t side = 0;
+
+	if (val > 9)
+		return ;
+	while (i < 7)
+	{
+		flip_state_segment('a' + i, 1);
+		i++;
+	}
+
+	i = 0;
+
+	if (val == 8)
+		return ;/*(_delay_ms(175))*/
+	if (val == 0)
+	{
+		// _delay_ms(175);
+		flip_state_segment('g', 0);
+
+		return ;
+	}
+	side = which_side(val);
+	if (!side)
+		return ;
+	else if (side >= 1 && side <= 2)
+	{
+		// uint8_t	tab[] = digitA;
+		if ((val == 9 || val == 7) || (val >= 1 && val <= 3))
+		{
+			// _delay_ms(77);
+			flip_state_segment('e', 0);
+		}
+		if ((val >= 1 && val <= 3) || val == 7)
+		{
+			// flip_state_segment('f', 0);
+			_delay_ms(55);
+		}	
+		if (val == 2)
+		{
+			flip_state_segment('c', 0);
+			flip_state_segment('e', 1);
+			// _delay_ms(15);
+		}
+		if (val == 7 || val == 1)
+		{
+			flip_state_segment('g', 0);
+			flip_state_segment('d', 0);
+			// _delay_ms(10);
+		}
+		if (val == 1)
+		{
+			flip_state_segment('a', 0);
+			// _delay_ms(5);
+		}
+	}
+	else
+	{
+		if  (val >= 4 && val <= 6)
+		{
+			flip_state_segment('b', 0); // 6
+			// _delay_ms(77);
+		}
+		if  (val >= 4 && val <= 5)
+		{
+			flip_state_segment('e', 0); // 5
+			// _delay_ms(27);
+		}
+		if (val == 4)
+		{
+			flip_state_segment('b', 1); 
+			flip_state_segment('a', 0); 
+			// _delay_ms(55);
+			flip_state_segment('d', 0); // 4
+		}
+	}
+
+}
+
+void idle_increment()
+{
+	static int i = 0;
+	static int dig = 0;
+	if (i > 9)
+		i = 0;
+	if (dig > 3)
+		dig = 0;
+
+	if (p_switch() == false)
+	{
+		display_number(i++);
+		for (int x = 0; x < 16 && p_switch() == false; x++)
+			_delay_ms(20);
+		// flip_state_digit(dig);
+	}
+	if (!((PINC & (1 << PC1)))) // if button2 pushed, b bits get flipped
+	{
+		flip_state_digit(dig);
+		dig++;
+	}
+	return ;
+}
+
+void	display_ficker(uint8_t digit, uint16_t value)
+{
+	if (p_switch() == false)
+	{
+		display_number(value);
+		// for (int x = 0; x < 16 && p_switch() == false; x++)
+			// _delay_ms(20);
+		flip_state_digit(digit);
+		
+	}
+
+}
+
+int main()
+{  
+	// WATCH DOG MENTIONNE
+	MCUCR &= ~(1 << WDRF);
+	wdt_disable();
+	flip_bit(5, &P_DDRB);
+	
+	DDRD |= 252; // 11111100					both for lights and ports, light only on pb5 
+	DDRB |= 31;	 // 00011111	activate ports
+	DDRC &= ~(1 << PC0); // button1
+	DDRC &= ~(1 << PC1); // button2
+
+
+	PORTD |= 252; // set port
+	PORTB = (PORTB & ~31) | 31;
+
+	PORTC |= (1 << PC0); // init buttons pins
+	PORTC |= (1 << PC1);
+
+
+	while (!p_switch())
+	{
+	}// start
+
+	init_uart();
+	_delay_ms(200);
+	print_port_stat_uart(&PORTB, "PORTB");
+	print_port_stat_uart(&PORTC, "PORTC");
+	print_port_stat_uart(&PORTD, "PORTD"); // debug ports at start
+	_delay_ms(200);
+	// flip_state_digit(3);
+	// flip_state_digit(2);
+	flip_state_digit(1);
+	flip_state_digit(0);
+	while (1)
+	{
+		// idle_2();
+		// idle_increment();
+		display_ficker(2, 4);
+		flip_state_digit(2);
+		display_ficker(3, 5);
+		flip_state_digit(3);
+		_delay_ms(20);
+		// flip_state_digit(3);
+		// for (int x = 0; x < 8 && p_switch() == false; x++)
+			// _delay_ms(20);
+
+		// for  (int i = 0; i <= 9 && p_switch() == false; i++)
+		// {
+		// 	char t[4];
+		// 	display_number(i);
+		// 	display_string_uart(itoa(i, t, 10));
+		// 	display_string_uart("\r\n");
+		// 	_delay_ms(800);
+		// }
+	
+		display_string_uart("debug loop\r\n");
+		
+		PORTB &= 0b11011111;
+		while (p_switch() != false)
+		{}
+		// flip_state_digit(2);
+		// flip_state_digit(3);
+		// for (int i = 0; i<4; i++)
+		// {
+			// flip_state_digit(i);
+			// _delay_ms(500);
+			// print_port_stat_uart(&PORTB, "PORTB");
+			// flip_state_digit(i);
+		// }
+
+	}
+}

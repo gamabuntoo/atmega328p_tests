@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "author": "student",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-7segment",
+      "id": "sevseg1",
+      "top": -166.98,
+      "left": 20.32,
+      "attrs": { "digits": "4", "common": "anode" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 73.4,
+      "left": -86.4,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn2",
+      "top": 255.8,
+      "left": 67.2,
+      "attrs": { "color": "blue", "xray": "1" }
+    }
+  ],
+  "connections": [
+    [ "sevseg1:A", "uno:2", "limegreen", [ "v-76.8", "h182.4", "v201.6", "h-76.8" ] ],
+    [ "sevseg1:B", "uno:3", "green", [ "v-67.2", "h134.4", "v182.4", "h-38.4" ] ],
+    [ "uno:4", "sevseg1:C", "green", [ "v-66.6", "h-92.7" ] ],
+    [ "sevseg1:D", "uno:5", "green", [ "v47.16", "h105.6" ] ],
+    [ "sevseg1:E", "uno:6", "green", [ "v56.76", "h105.61" ] ],
+    [ "sevseg1:F", "uno:7", "green", [ "v-57.6", "h153.6", "v153.6", "h-76.8" ] ],
+    [ "sevseg1:G", "uno:8", "limegreen", [ "v27.96", "h48" ] ],
+    [ "sevseg1:DIG1", "uno:9", "#8f4814", [ "v-48", "h163.21", "v134.4", "h-86.4" ] ],
+    [
+      "sevseg1:DIG2",
+      "uno:10",
+      "#8f4814",
+      [ "v-38.4", "h115.2", "v0", "h9.6", "v115.2", "h-86.4" ]
+    ],
+    [ "sevseg1:DIG3", "uno:11", "#8f4814", [ "v-28.8", "h-134.4", "v182.4", "h-19.2" ] ],
+    [ "sevseg1:DIG4", "uno:12", "#8f4814", [ "v0" ] ],
+    [ "sevseg1:COM", "uno:5V", "yellow", [ "v18.36", "h-172.8", "v288", "h192" ] ],
+    [ "btn1:1.r", "uno:A0", "green", [ "v0", "h19.4", "v134.4", "h211.2" ] ],
+    [ "btn1:2.r", "uno:GND.2", "gray", [ "h9.8", "v134.6", "h172.8", "v0", "h9.6" ] ],
+    [ "uno:A1", "btn2:1.r", "green", [ "v0" ] ],
+    [ "btn2:2.r", "uno:GND.3", "gray", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
