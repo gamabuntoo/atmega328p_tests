@@ -6,7 +6,7 @@
 /*   By: gule-bat <gule-bat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/17 22:34:14 by gule-bat          #+#    #+#             */
-/*   Updated: 2026/11/18 03:55:30 by gule-bat         ###   ########.fr       */
+/*   Updated: 2026/11/18 04:13:07 by gule-bat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,7 @@ int which_side(uint16_t val)
 	return (0);
 }
 
-void	display_number(uint8_t val)
+void	display_number(uint8_t val) // SWITCHCASE NECESSAIRE
 {
 	int i = 0;
 	uint16_t side = 0;
@@ -203,18 +203,18 @@ void	display_number(uint8_t val)
 		if  (val >= 4 && val <= 6)
 		{
 			flip_state_segment('b', 0); // 6
-			// _delay_ms(77);
+			_delay_ms(77);
 		}
 		if  (val >= 4 && val <= 5)
 		{
 			flip_state_segment('e', 0); // 5
-			// _delay_ms(27);
+			_delay_ms(27);
 		}
 		if (val == 4)
 		{
 			flip_state_segment('b', 1); 
 			flip_state_segment('a', 0); 
-			// _delay_ms(55);
+			_delay_ms(55);
 			flip_state_segment('d', 0); // 4
 		}
 	}
@@ -300,7 +300,7 @@ int main()
 		flip_state_digit(2);
 		display_ficker(3, 5);
 		flip_state_digit(3);
-		_delay_ms(20);
+		_delay_ms(20); // 				probleme qd PB5 parfois, décalage suspicieux (flipstatedigit?)
 		// flip_state_digit(3);
 		// for (int x = 0; x < 8 && p_switch() == false; x++)
 			// _delay_ms(20);
