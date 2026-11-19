@@ -6,7 +6,7 @@
 /*   By: gule-bat <gule-bat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/17 22:34:14 by gule-bat          #+#    #+#             */
-/*   Updated: 2026/11/18 04:13:07 by gule-bat         ###   ########.fr       */
+/*   Updated: 2026/11/19 23:53:52 by gule-bat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,22 @@ void	flip_bit(uint8_t bit,  volatile uint8_t *Por)
 			*Por |= b;
 	}
 	return ;
+}
+
+bool	stat_bit(uint8_t bit,  volatile uint8_t *Por)
+{
+	uint8_t v = 1;
+	uint8_t b = 0;
+	b = v << bit;
+
+	if (b != 0 && ((b) & (b-1)) == 0)
+	{
+		if ((*Por & b) != 0)
+			return (true);
+		else
+			return (false);
+	}
+	return (false);
 }
 
 void	flip_state_segment(uint8_t segment, bool stat)
@@ -69,39 +85,24 @@ void	flip_state_digit(uint8_t dig)
 	}
 }
 
-void idle_2()
+void	set_state_digit(uint8_t dig, bool stat)
 {
-	static int i = 0;
-	static char c = 'a';
-	static bool stat = 1;
-	char t[4];
-	if (c >= 'g' || i >= 7)
-	{
-		i = 0;
-		c = 'a';
-		stat = !stat;
-	}
-	while (i < 7 && p_switch() == false)
-	{
-		if (!((PINC & (1 << PC1))) && ((i != 5 && i != 7 && i != 0) || (i > 0 && i < 4))) // if button2 pushed, b bits get flipped
-			flip_state_digit(i);
-		flip_state_segment(c, stat);
-
-		//debug
-
-		display_string_uart(itoa(i, t, 10));			display_string_uart(" index\r\n");
-		print_port_stat_uart(&PORTD, "PORTD");
-		print_port_stat_uart(&PORTB, "PORTB");
+	uint8_t i = 0;
 	
-		for (int x = 0; x < 8 && p_switch() == false; x++)
-			_delay_ms(20);
+	if (dig >= 4 && dig < 0)
+		return ;
+	while (i < 4)
+	{
+		if (i == dig)
+		{
+			if (stat_bit(i+1, &PORTB) == true && stat == 0)
+				flip_bit(i+1, &PORTB);
+			else if (stat_bit(i+i, &PORTB) == false && stat == 1)
+				flip_bit(i+1, &PORTB);
+		}
 		i++;
-		c++;
 	}
-
 }
-
-
 
 int which_side(uint16_t val)
 {
@@ -154,7 +155,6 @@ void	display_number(uint8_t val) // SWITCHCASE NECESSAIRE
 	}
 
 	i = 0;
-
 	if (val == 8)
 		return ;/*(_delay_ms(175))*/
 	if (val == 0)
@@ -177,8 +177,8 @@ void	display_number(uint8_t val) // SWITCHCASE NECESSAIRE
 		}
 		if ((val >= 1 && val <= 3) || val == 7)
 		{
-			// flip_state_segment('f', 0);
-			_delay_ms(55);
+			flip_state_segment('f', 0);
+			// _delay_ms(55);
 		}	
 		if (val == 2)
 		{
@@ -203,63 +203,62 @@ void	display_number(uint8_t val) // SWITCHCASE NECESSAIRE
 		if  (val >= 4 && val <= 6)
 		{
 			flip_state_segment('b', 0); // 6
-			_delay_ms(77);
+			// _delay_ms(77);
 		}
 		if  (val >= 4 && val <= 5)
 		{
 			flip_state_segment('e', 0); // 5
-			_delay_ms(27);
+			// _delay_ms(27);
 		}
 		if (val == 4)
 		{
 			flip_state_segment('b', 1); 
 			flip_state_segment('a', 0); 
-			_delay_ms(55);
+			// _delay_ms(55);
 			flip_state_segment('d', 0); // 4
 		}
 	}
 
 }
 
-void idle_increment()
+void	display_flicker(uint8_t digit, uint16_t value)
 {
-	static int i = 0;
-	static int dig = 0;
-	if (i > 9)
-		i = 0;
-	if (dig > 3)
-		dig = 0;
-
+	// for (int x = 0; x < 4 && p_switch() == false; x++)
+		// _delay_ms(20);
 	if (p_switch() == false)
 	{
-		display_number(i++);
-		for (int x = 0; x < 16 && p_switch() == false; x++)
-			_delay_ms(20);
-		// flip_state_digit(dig);
+		display_number(value);
+		_delay_us(20);	
+		flip_state_digit(digit);
 	}
-	if (!((PINC & (1 << PC1)))) // if button2 pushed, b bits get flipped
+}
+
+
+void	display_val(uint16_t value)
+{
+	uint8_t x = 0;
+	int8_t id = 3;
+	uint16_t tmp = value;
+
+	while (id >= 0 && p_switch() == false)
 	{
-		flip_state_digit(dig);
-		dig++;
+		if (id >= 0 && tmp == 0)
+			return ;
+		x = tmp % 10;
+		tmp = tmp / 10;
+		display_flicker(id, x);
+		set_state_digit(id, 1);
+		set_state_digit(id, 0);
+		id--;
 	}
 	return ;
 }
 
-void	display_ficker(uint8_t digit, uint16_t value)
-{
-	if (p_switch() == false)
-	{
-		display_number(value);
-		// for (int x = 0; x < 16 && p_switch() == false; x++)
-			// _delay_ms(20);
-		flip_state_digit(digit);
-		
-	}
-
-}
 
 int main()
 {  
+	uint16_t ct = 0;
+	
 	// WATCH DOG MENTIONNE
 	MCUCR &= ~(1 << WDRF);
 	wdt_disable();
@@ -282,52 +281,35 @@ int main()
 	{
 	}// start
 
-	init_uart();
-	_delay_ms(200);
-	print_port_stat_uart(&PORTB, "PORTB");
-	print_port_stat_uart(&PORTC, "PORTC");
-	print_port_stat_uart(&PORTD, "PORTD"); // debug ports at start
-	_delay_ms(200);
-	// flip_state_digit(3);
-	// flip_state_digit(2);
-	flip_state_digit(1);
-	flip_state_digit(0);
+	// init_uart();
+	// _delay_ms(200);
+	// print_port_stat_uart(&PORTB, "PORTB");
+	// print_port_stat_uart(&PORTC, "PORTC");
+	// print_port_stat_uart(&PORTD, "PORTD"); // debug ports at start
+	// _delay_ms(200);
+
+	set_state_digit(3, 0);
+	set_state_digit(2, 0);
+	set_state_digit(1, 0);
+	set_state_digit(0, 0);
 	while (1)
 	{
-		// idle_2();
-		// idle_increment();
-		display_ficker(2, 4);
-		flip_state_digit(2);
-		display_ficker(3, 5);
-		flip_state_digit(3);
-		_delay_ms(20); // 				probleme qd PB5 parfois, décalage suspicieux (flipstatedigit?)
-		// flip_state_digit(3);
+		if (ct > 9999)
+			ct = 0;
+
+		display_val(ct);
+		if (!((PINC & (1 << PC1)))) // if button2 pushed, value inscreases
+		{
+			ct++;
+			_delay_ms(100);
+		}
+
+		_delay_us(20); // 				probleme qd PB5 parfois, décalage suspicieux (flipstatedigit?)
 		// for (int x = 0; x < 8 && p_switch() == false; x++)
 			// _delay_ms(20);
-
-		// for  (int i = 0; i <= 9 && p_switch() == false; i++)
-		// {
-		// 	char t[4];
-		// 	display_number(i);
-		// 	display_string_uart(itoa(i, t, 10));
-		// 	display_string_uart("\r\n");
-		// 	_delay_ms(800);
-		// }
-	
-		display_string_uart("debug loop\r\n");
-		
-		PORTB &= 0b11011111;
+										// display_string_uart("debug loop\r\n");
 		while (p_switch() != false)
 		{}
-		// flip_state_digit(2);
-		// flip_state_digit(3);
-		// for (int i = 0; i<4; i++)
-		// {
-			// flip_state_digit(i);
-			// _delay_ms(500);
-			// print_port_stat_uart(&PORTB, "PORTB");
-			// flip_state_digit(i);
-		// }
-
+		PORTB &= 0b11011111;
 	}
 }
